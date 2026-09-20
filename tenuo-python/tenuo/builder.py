@@ -577,6 +577,10 @@ class GrantBuilder:
                 .grant(kp))
         """
         self._rust_builder.with_tool(name)
+        # Also track in capabilities so grant() doesn't fail with
+        # "must have at least one tool" when only tool() is called.
+        if name not in self._capabilities:
+            self._capabilities[name] = {}
         return self
 
     def tools(self, names: List[str]) -> "GrantBuilder":
@@ -594,6 +598,11 @@ class GrantBuilder:
             Self for method chaining
         """
         self._rust_builder.with_tools(names)
+        # Also track in capabilities so grant() doesn't fail with
+        # "must have at least one tool" when only tools() is called.
+        for name in names:
+            if name not in self._capabilities:
+                self._capabilities[name] = {}
         return self
 
     def issuable_tool(self, name: str) -> "GrantBuilder":
