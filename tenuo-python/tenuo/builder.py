@@ -576,7 +576,12 @@ class GrantBuilder:
                 .holder(worker_key)
                 .grant(kp))
         """
-        self._rust_builder.with_tool(name)
+        # If no tools exist yet (inherit_all not called), use capability() instead
+        # which adds tools rather than filtering them. See Issue #674.
+        if not self._rust_builder.capabilities:
+            self._rust_builder.with_capability(name, {})
+        else:
+            self._rust_builder.with_tool(name)
         return self
 
     def tools(self, names: List[str]) -> "GrantBuilder":
