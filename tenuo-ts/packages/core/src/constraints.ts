@@ -25,6 +25,30 @@ import type {
 import { TenuoConfigurationError } from "./errors.ts";
 
 /**
+ * Builders throw on a misspelled option instead of dropping it: an option
+ * that vanishes silently (`urlSafe({ domains })`) widens authority. The core
+ * applies the same rule to raw constraint objects when the policy compiles.
+ */
+function rejectUnknownOptions(
+  builder: string,
+  options: unknown,
+  allowed: readonly string[],
+): void {
+  if (options === undefined || options === null) {
+    return;
+  }
+  if (typeof options !== "object" || Array.isArray(options)) {
+    throw new TenuoConfigurationError(`tenuo.${builder}() expects an options object`);
+  }
+  const unknown = Object.keys(options).find((key) => !allowed.includes(key));
+  if (unknown !== undefined) {
+    throw new TenuoConfigurationError(
+      `tenuo.${builder}() received unknown option "${unknown}"; allowed options: ${allowed.join(", ")}`,
+    );
+  }
+}
+
+/**
  * Constraint builders. These produce plain marker objects; every one is
  * evaluated by the Rust core, never in TypeScript. The set matches the
  * Python SDK and the core `Constraint` enum one for one. Builders that
@@ -38,6 +62,7 @@ export function under(
   root: string,
   options?: { readonly caseSensitive?: boolean; readonly allowEqual?: boolean },
 ): UnderConstraint {
+  rejectUnknownOptions("under", options, ["caseSensitive", "allowEqual"]);
   if (!root.startsWith("/")) {
     throw new TenuoConfigurationError("tenuo.under() expects an absolute path (start with /)");
   }
@@ -55,6 +80,7 @@ export function under(
 }
 
 export function email(options: { domain: string }): EmailConstraint {
+  rejectUnknownOptions("email", options, ["domain"]);
   return { kind: "email", domain: options.domain };
 }
 
@@ -79,6 +105,7 @@ export function range(options: {
   readonly minExclusive?: boolean;
   readonly maxExclusive?: boolean;
 }): RangeConstraint {
+  rejectUnknownOptions("range", options, ["min", "max", "minExclusive", "maxExclusive"]);
   if (options.min === undefined && options.max === undefined) {
     throw new TenuoConfigurationError("tenuo.range() requires min, max, or both");
   }
@@ -176,6 +203,7 @@ export function urlSafe(options?: {
   readonly allowDomains?: readonly string[];
   readonly denyDomains?: readonly string[];
 }): UrlSafeConstraint {
+  rejectUnknownOptions("urlSafe", options, ["schemes", "allowDomains", "denyDomains"]);
   const out: {
     kind: "urlSafe";
     schemes?: readonly string[];
