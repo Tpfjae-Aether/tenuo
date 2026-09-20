@@ -3384,8 +3384,16 @@ impl PyAttenuationBuilder {
     ///
     /// The tool must be in the parent warrant's tools.
     /// This is for EXECUTION warrants. For ISSUER warrants, use `with_issuable_tool()`.
+    ///
+    /// If tools are already present (e.g., after `inherit_all()`), this narrows
+    /// to the specified tool. If no tools are present, this adds the tool.
     fn with_tool(&mut self, tool: &str) {
-        self.inner.retain_capability(tool);
+        if self.inner.tools().is_empty() {
+            // No tools to retain — add the tool like with_capability does
+            self.inner.set_capability(tool, crate::constraints::ConstraintSet::empty());
+        } else {
+            self.inner.retain_capability(tool);
+        }
     }
 
     /// Narrow execution warrant tools to a subset.
