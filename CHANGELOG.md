@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **MCP warrants can cross `_meta`-stripping gateways.**
+  `SecureMCPClient(inject_warrant="argument")` carries the warrant, PoP, and
+  approvals in reserved `arguments._tenuo`; `MCPVerifier` removes it before
+  verification and tool dispatch, and rejects conflicting `_meta` and argument
+  envelopes.
 - **Linux wheels install on glibc 2.28 and newer.** Release wheels were built
   natively on `ubuntu-latest` and tagged `manylinux_2_38`, so `pip install
   tenuo` refused the wheel on Ubuntu 20.04/22.04, Debian 11/12, RHEL 8/9,
